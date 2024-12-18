@@ -30,8 +30,8 @@ const Wrapper =()=>{
     }
 
     initiateUploadUser()
-    
-},[])
+
+},[navigate])
 
 if(loading){
   return <Loading/>
