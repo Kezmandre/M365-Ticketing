@@ -1,30 +1,39 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { userDatabase as initialUserDatabase } from "./data"; // Assuming you have user data
+import { db } from "../firebaseConfig";
+import { collection, getDocs ,updateDoc , doc} from "firebase/firestore";
+// import { userDatabase as initialUserDatabase } from "./data"; // Assuming you have user data
 import Party from "../images/party.jpeg";
 
 const RegistrationForm = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [users, setUsers] = useState([])
   const navigate = useNavigate();
 
-  // Load the user database from localStorage or fallback to the initial data
-  let userDatabase = JSON.parse(localStorage.getItem("userDatabase")) || [
-    ...initialUserDatabase,
-  ];
 
   useEffect(() => {
-    // Check for existing registration flag in local storage
-    const registrationFlag = localStorage.getItem("userRegistrationFlag");
-    if (registrationFlag) {
-      setErrorMessage("You have already registered.");
-      setTimeout(() => setErrorMessage(""), 5000);
-      return;
+    const fetchUser = async()=>{
+      try {
+        const userCollection = collection(db, "users")
+        const querySnapshot = await getDocs(userCollection)
+        const userList = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+
+        console.log("UserList", userList)
+        
+        setUsers(userList)
+      } catch (error) {
+        console.error("error fetching users:", error)
+      }
     }
+    fetchUser()
   }, []);
 
-  const handleRegistration = () => {
+  const handleRegistration = async() => {
     // Clear any previous error messages
     setErrorMessage("");
 
@@ -36,7 +45,7 @@ const RegistrationForm = () => {
     }
 
     // Find the matching user in the invitation list
-    const matchedUser = userDatabase.find(
+    const matchedUser = users.find(
       (user) =>
         user.firstName.toLowerCase() === firstName.trim().toLowerCase() &&
         user.lastName.toLowerCase() === lastName.trim().toLowerCase()
@@ -50,29 +59,31 @@ const RegistrationForm = () => {
     }
 
     // Check if the user has already registered
-    if (matchedUser.registered === true) {
+    if (matchedUser.registered ) {
       setErrorMessage("You have already registered.");
       setTimeout(() => setErrorMessage(""), 5000);
       return;
     }
 
-    // Mark the user as registered (first registration allowed)
-    matchedUser.registered = true;
 
-    // Persist the updated userDatabase to localStorage
-    localStorage.setItem("userDatabase", JSON.stringify(userDatabase));
-
-    // Set the registration flag in local storage (optional, for additional device-specific checks)
-    // localStorage.setItem("userRegistrationFlag", "true");
-
-    const userDetails = {
-      firstName: matchedUser.firstName,
-      lastName: matchedUser.lastName,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Navigate to the QR code page with user details
-    navigate("/qrcode", { state: { userDetails } });
+    try {
+      const userDocRef = doc(db, "users", matchedUser.id)
+      await updateDoc(userDocRef,{registered:true})
+      const userDetails = {
+        firstName: matchedUser.firstName,
+        lastName: matchedUser.lastName,
+        timestamp: new Date().toISOString(),
+      };
+  
+      // Navigate to the QR code page with user details
+      navigate("/qrcode", { state: { userDetails } });
+    } catch (error) {
+      console.error("error updating user:", error)
+      setErrorMessage("An error occur while Registering. Please try again")
+      
+    }
+    
+    
   };
 
   return (
