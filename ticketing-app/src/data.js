@@ -437,6 +437,11 @@ const users = [
     { firstName: "Adesola", lastName: "Francis", registered: false },
     { firstName: "joannes", lastName: "joe", registered: false },
     { firstName: "Eden", lastName: "Harzard", registered: false },
+    { firstName: "Ahmed", lastName: "Alamutu", registered: false },
+    { firstName: "Kolawole", lastName: "Adedipe", registered: false },
+    { firstName: "Cornel", lastName: "Igbokwe", registered: false },
+    { firstName: "Febishola", lastName: "Owoeye-wise", registered: false },
+
 
   ];
 
